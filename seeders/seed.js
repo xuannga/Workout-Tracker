@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const db = require('../models');
 
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost/pizza_shopping', {
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost/Workout', {
     useNewUrlParser: true,
     useUnifiedTopology: true,
     useCreateIndex: true,
