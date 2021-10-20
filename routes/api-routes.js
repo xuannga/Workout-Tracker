@@ -1,54 +1,56 @@
-const router = require("express").Router();
-const db = require("../models");
+const express = require("express");
+const mongoose = require("mongoose");
+const Workouts = require("../models/workouts");
+app = express();
+var d = new Date();
 
-router.get("/api/workouts", (req, res) => {
-    db.Workout.find({})
-        .sort({ date: -1 })
-        .then((workout) => {
-            res.status(200).json(workout);
-        })
-        .catch((err) => {
-            res.status(400).json(err);
+
+
+module.exports = function(app) {
+    //get all workouts
+    app.get("/api/workouts", (req, res) => {
+        Workouts.find({}).sort({ date: 1 }).then(data => {
+            res.json(data);
+        }).catch(err => {
+            console.log(err);
         });
-});
+    });
 
-router.get("/api/workouts/range", (req, res) => {
-    db.Workout.find({})
-        .sort({ date: -1 })
-        .then((workout) => {
-            res.status(200).json(workout);
-        })
-        .catch((err) => {
-            res.status(400).json(err);
+    app.put("/api/workouts/:id", async(req, res) => {
+        console.log("PUT ID", req.params.id);
+        //NEED TO INCLUDE ALL OF EXERCISE 
+        try {
+            var addExcercise = await Workouts.findByIdAndUpdate({ _id: req.params.id }, { $set: { day: d.getDay(), date: Date.now() }, $push: { exercises: req.body } }, { new: true });
+            addExcercise.getTotalDuration();
+            console.log("update", addExcercise);
+            var addTotalDur = await Workouts.findByIdAndUpdate({ _id: req.params.id }, { $set: { totalDuration: addExcercise.totalDuration } }, { new: true })
+            console.log(addTotalDur, "update after");
+            res.json(addTotalDur);
+        } catch (err) {
+            console.log(err)
+        }
+
+    });
+    //Create new workout
+    app.post("/api/workouts", (req, res) => {
+        Workouts.create({ date: Date.now(), day: d.getDay() }).then(data => {
+            res.json(data);
+        }).catch(err => {
+            console.log(err);
         });
-});
+    });
 
-router.post("/api/workouts", (req, res) => {
-    db.Workout.create(req.body)
-        .then((workout) => {
-            res.status(201).json(workout);
-        })
-        .catch((err) => {
-            res.status(400).json(err);
-        });
-});
+    //get all workouts
+    app.get("/api/workouts/range", async(req, res) => {
+        var sunday = new Date(new Date().setDate(new Date().getDate() - d.getDay())).setHours(00, 00, 00);
+        console.log("sunday", sunday);
+        try {
+            const data = await Workouts.find({ date: { $gte: sunday } }).sort({ date: 1 });
+            console.log(data);
+            res.json(data);
+        } catch (err) {
+            throw err;
+        }
+    })
 
-router.put("/api/workouts/:id", async(req, res) => {
-    const id = req.params.id;
-    const body = req.body;
-    db.Workout.updateOne({
-            _id: id
-        }, {
-            $push: {
-                exercises: {...body },
-            },
-        })
-        .then((workout) => {
-            res.status(200).json(workout);
-        })
-        .catch((err) => {
-            res.status(400).json(err);
-        });
-});
-
-module.exports = router;
+}
